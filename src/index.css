@@ -1,0 +1,17 @@
+/* src/index.css */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Remove margens padrão e garante altura total */
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;   /* 100% da largura da janela */
+  height: 100vh;  /* 100% da altura da janela */
+  overflow: hidden; /* Bloqueia barras de rolagem */
+  box-sizing: border-box;
+  background-color: #000; /* Evita fundo branco piscando */
+}
