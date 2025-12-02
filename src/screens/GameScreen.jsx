@@ -38,6 +38,12 @@ const COLORS = {
   glow: "0 0 15px rgba(251, 191, 36, 0.4)", // Glow Dourado
 }
 
+// Componente para mover o mapa suavemente (mantido para compatibilidade, mas o MapLibre usa ref)
+function MapRecenter({ center }) {
+  // Não usado com MapLibre diretamente, mas mantido caso volte para Leaflet
+  return null
+}
+
 const GameScreen = ({ volume, onEndGame }) => {
   const [selected, setSelected] = useState(null)
   const [history, setHistory] = useState([])
@@ -181,12 +187,10 @@ const GameScreen = ({ volume, onEndGame }) => {
     mapRef.current = map
 
     map.on("load", () => {
-      // Remove camada padrão de prédios se existir
       if (map.getLayer("building")) {
         map.removeLayer("building")
       }
 
-      // Adicionar camada 3D personalizada com a cor do TEMA ÂMBAR
       map.addLayer(
         {
           id: "3d-buildings",
@@ -199,9 +203,9 @@ const GameScreen = ({ volume, onEndGame }) => {
               "interpolate",
               ["linear"],
               ["get", "render_height"],
-              0, COLORS.surface,      // Base escura
-              30, "#44403c",          // Cinza médio
-              100, COLORS.secondary,  // Topos altos em âmbar
+              0, COLORS.surface,
+              30, "#44403c",
+              100, COLORS.secondary,
             ],
             "fill-extrusion-height": [
               "interpolate",
@@ -223,7 +227,6 @@ const GameScreen = ({ volume, onEndGame }) => {
         "poi_label"
       )
 
-      // Adicionar marcadores no mapa
       incidentsList.forEach((inc) => {
         if (inc.status !== "pending") return
 
@@ -231,12 +234,11 @@ const GameScreen = ({ volume, onEndGame }) => {
         el.style.width = "24px"
         el.style.height = "24px"
         el.style.borderRadius = "50%"
-        el.style.backgroundColor = COLORS.primary // Âmbar
+        el.style.backgroundColor = COLORS.primary
         el.style.border = `2px solid #fff`
         el.style.cursor = "pointer"
         el.style.boxShadow = `0 0 10px ${COLORS.primary}`
         
-        // Adiciona um ponto pulsante dentro
         const inner = document.createElement("div")
         inner.className = "blink"
         inner.style.width = "100%"; inner.style.height = "100%"; inner.style.borderRadius = "50%"; inner.style.backgroundColor = "white"; inner.style.opacity = "0.5";
@@ -260,7 +262,6 @@ const GameScreen = ({ volume, onEndGame }) => {
     }
   }, [incidentsList])
 
-  // Efeito de FlyTo ao selecionar
   useEffect(() => {
     if (selected && mapRef.current) {
       mapRef.current.flyTo({
@@ -289,7 +290,6 @@ const GameScreen = ({ volume, onEndGame }) => {
     setIncidentsList(updated)
     setHistory((prev) => [{ text: logMsg, success: isCorrect, id: Date.now() }, ...prev.slice(0, 4)])
 
-    // Remove do mapa
     const markerIndex = markersRef.current.findIndex((m) => m.id === selected.id)
     if (markerIndex !== -1) {
       markersRef.current[markerIndex].marker.remove()
@@ -373,12 +373,12 @@ const GameScreen = ({ volume, onEndGame }) => {
       {/* --- ÁREA CENTRAL (MAPA 3D + LOG) --- */}
       <div style={{ flex: 1, position: "relative", display: "flex" }}>
         
-        {/* CONTAINER DO MAPA 3D (Substituindo o Leaflet) */}
+        {/* CONTAINER DO MAPA 3D */}
         <div style={{ flex: 1, position: "relative", background: "#000" }}>
            <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
         </div>
 
-        {/* LOG LATERAL (DESIGN ORIGINAL) */}
+        {/* LOG LATERAL */}
         <div style={{ position: "absolute", top: 20, right: 20, width: 340, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: 16, zIndex: 500, boxShadow: `0 4px 12px rgba(0,0,0,0.3)` }}>
           <div style={{ borderBottom: `1px solid ${COLORS.border}`, marginBottom: 12, paddingBottom: 8, display: "flex", alignItems: "center", gap: 8, color: COLORS.primary }}>
             <Terminal size={16} />
@@ -394,7 +394,7 @@ const GameScreen = ({ volume, onEndGame }) => {
           </div>
         </div>
 
-        {/* MODAL DE DETALHES (DESIGN ORIGINAL) */}
+        {/* MODAL DE DETALHES */}
         {selected && (
           <div style={{ position: "absolute", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(5px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
             <div style={{ width: "700px", maxWidth: "90vw", background: COLORS.surface, border: `1px solid ${COLORS.primary}`, borderRadius: 12, boxShadow: `0 20px 60px rgba(0,0,0,0.6)`, padding: 24, position: "relative" }}>
@@ -441,6 +441,12 @@ const GameScreen = ({ volume, onEndGame }) => {
                   <div style={{ background: COLORS.surfaceLight, padding: 14, borderRadius: 8, border: `1px solid ${COLORS.border}` }}>
                     <div style={{ color: COLORS.textSecondary, fontSize: 11, fontWeight: 600 }}>IMPOSTO PAGO (TOTAL)</div>
                     <div style={{ fontSize: 22, color: COLORS.textPrimary, fontWeight: 700 }}>R$ {Math.round(selected.impostoPago).toLocaleString()}</div>
+                    {/* AQUI ESTÁ A MARGEM DE LUCRO RESTAURADA */}
+                    {selected.lucroPercentInformado && (
+                      <div style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 6 }}>
+                        Margem de Lucro Declarada: {selected.lucroPercentInformado}%
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
