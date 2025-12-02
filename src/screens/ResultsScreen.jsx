@@ -1,40 +1,96 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Award, AlertTriangle, ThumbsDown, FileText, RefreshCw, LogOut } from 'lucide-react';
+
+// IMPORTAÇÃO DAS MÚSICAS (Ajuste o caminho conforme sua pasta)
+// Se estiver usando Vite/Webpack e a pasta assets:
+import winMusicFile from '../assets/win_music.mp3';
+import neutralMusicFile from '../assets/neutral_music.mp3';
+import failMusicFile from '../assets/fail_music.mp3';
+
+// Se estiver usando pasta public, pode usar strings diretas no src do Audio:
+// const winMusicFile = "/sounds/win_music.mp3"; 
 
 // --- PALETA DE CORES (Mesma do GameScreen) ---
 const COLORS = {
   primary: "#fbbf24", // Âmbar
   secondary: "#d97706",
+  danger: "#ef4444",
+  success: "#10b981",
   background: "#0c0a09", // Preto quente
   surface: "#1c1917", // Painel
   surfaceLight: "#292524",
   border: "#44403c",
   textPrimary: "#fafaf9",
   textSecondary: "#a8a29e",
-  glow: "rgba(251, 191, 36, 0.2)",
 };
 
 const ResultsScreen = ({ data, onRestart, onExit }) => {
   const { correct, total, budgetFinal } = data;
-  let title, description, icon, themeColor;
+  
+  // Referência para o áudio para poder pausar ao sair
+  const audioRef = useRef(null);
 
-  // Lógica de Resultado
-  if (correct === total) {
-    title = 'PROMOÇÃO RECOMENDADA';
-    description = 'Auditoria impecável. Seus relatórios foram considerados modelo de eficiência. A Superintendência aprovou sua indicação para Auditor-Chefe.';
-    icon = <Award size={48} />;
-    themeColor = '#10b981'; // Verde Sucesso
-  } else if (correct >= Math.ceil(total / 2)) {
-    title = 'MANUTENÇÃO DO CARGO';
-    description = 'Desempenho dentro da média. Algumas inconsistências foram notadas, mas o resultado final foi aceitável. Você continua sob observação.';
-    icon = <AlertTriangle size={48} />;
-    themeColor = '#f59e0b'; // Laranja Alerta
-  } else {
-    title = 'EXONERAÇÃO IMEDIATA';
-    description = 'Falha crítica nos protocolos. Decisões equivocadas causaram prejuízo ao erário ou injustiça fiscal. Seu acesso ao sistema foi revogado.';
-    icon = <ThumbsDown size={48} />;
-    themeColor = '#ef4444'; // Vermelho Erro
+  // Determinar o estado do jogo
+  let status = 'fail'; // default
+  if (correct === total) status = 'success';
+  else if (correct >= Math.ceil(total / 2)) status = 'neutral';
+
+  // Configuração baseada no status
+  let config = {
+    title: '',
+    description: '',
+    icon: null,
+    themeColor: '',
+    music: null
+  };
+
+  switch (status) {
+    case 'success':
+      config = {
+        title: 'PROMOÇÃO RECOMENDADA',
+        description: 'Auditoria impecável. Seus relatórios foram considerados modelo de eficiência. A Superintendência aprovou sua indicação para Auditor-Chefe.',
+        icon: <Award size={48} />,
+        themeColor: COLORS.success, // Verde
+        music: winMusicFile
+      };
+      break;
+    case 'neutral':
+      config = {
+        title: 'MANUTENÇÃO DO CARGO',
+        description: 'Desempenho dentro da média. Algumas inconsistências foram notadas, mas o resultado final foi aceitável. Você continua sob observação.',
+        icon: <AlertTriangle size={48} />,
+        themeColor: COLORS.primary, // Âmbar/Laranja
+        music: neutralMusicFile
+      };
+      break;
+    case 'fail':
+    default:
+      config = {
+        title: 'EXONERAÇÃO IMEDIATA',
+        description: 'Falha crítica nos protocolos. Decisões equivocadas causaram prejuízo ao erário ou injustiça fiscal. Seu acesso ao sistema foi revogado.',
+        icon: <ThumbsDown size={48} />,
+        themeColor: COLORS.danger, // Vermelho
+        music: failMusicFile
+      };
+      break;
   }
+
+  // Efeito para tocar a música ao montar o componente
+  useEffect(() => {
+    if (config.music) {
+      audioRef.current = new Audio(config.music);
+      audioRef.current.volume = 0.5; // Volume médio
+      audioRef.current.play().catch(e => console.log("Autoplay bloqueado:", e));
+    }
+
+    // Cleanup: Parar música ao sair da tela
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, [config.music]); // Executa apenas se a música mudar (na montagem)
 
   return (
     <div style={{
@@ -90,22 +146,22 @@ const ResultsScreen = ({ data, onRestart, onExit }) => {
             <div style={{
               padding: 20,
               borderRadius: '50%',
-              background: `${themeColor}15`, // Cor com transparência
-              border: `2px solid ${themeColor}`,
-              color: themeColor,
+              background: `${config.themeColor}15`, // Cor com transparência
+              border: `2px solid ${config.themeColor}`,
+              color: config.themeColor,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 20px ${themeColor}30`
+              boxShadow: `0 0 20px ${config.themeColor}30`
             }}>
-              {icon}
+              {config.icon}
             </div>
 
             {/* Texto */}
             <div>
-              <h1 style={{ margin: '0 0 10px 0', fontSize: 24, fontWeight: 800, color: themeColor, letterSpacing: 0.5 }}>
-                {title}
+              <h1 style={{ margin: '0 0 10px 0', fontSize: 24, fontWeight: 800, color: config.themeColor, letterSpacing: 0.5 }}>
+                {config.title}
               </h1>
               <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: COLORS.textSecondary }}>
-                {description}
+                {config.description}
               </p>
             </div>
           </div>
